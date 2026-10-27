@@ -1,0 +1,6 @@
+{
+  "name": "Status Saver",
+  "description": "Save, preview, and organize WhatsApp statuses across multiple apps and accounts directly into your gallery.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

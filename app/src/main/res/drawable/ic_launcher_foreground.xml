@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Status Ring segments around the circle (radius ~24, center 54, 54) -->
+    <!-- Status ring arc 1 -->
+    <path
+        android:strokeColor="#6EE7B7"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M 38,32 A 26,26 0 0 1 70,32" />
+    <!-- Status ring arc 2 -->
+    <path
+        android:strokeColor="#6EE7B7"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M 78,42 A 26,26 0 0 1 78,66" />
+    <!-- Status ring arc 3 -->
+    <path
+        android:strokeColor="#6EE7B7"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M 70,76 A 26,26 0 0 1 38,76" />
+    <!-- Status ring arc 4 -->
+    <path
+        android:strokeColor="#6EE7B7"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M 30,66 A 26,26 0 0 1 30,42" />
+
+    <!-- Center Download Arrow & Media Storage Base -->
+    <!-- Down Arrow Stem -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 52,38 L 56,38 L 56,54 L 52,54 Z" />
+    <!-- Down Arrow Head -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 46,52 L 54,61 L 62,52 L 58,52 L 54,56.5 L 50,52 Z" />
+    <!-- Tray / Gallery Base line -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M 44,65 L 44,68 L 64,68 L 64,65" />
+    <!-- Small play dot accent -->
+    <path
+        android:fillColor="#25D366"
+        android:pathData="M 68,36 L 74,40 L 68,44 Z" />
+</vector>
