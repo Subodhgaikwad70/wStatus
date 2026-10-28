@@ -19,7 +19,6 @@ class UserPreferences(private val context: Context) {
     companion object {
         private val KEY_THEME = stringPreferencesKey("theme_mode")
         private val KEY_SEEN_TUTORIAL = booleanPreferencesKey("seen_tutorial")
-        private val KEY_DEMO_MODE = booleanPreferencesKey("demo_mode")
         private val KEY_FAVORITES = stringSetPreferencesKey("favorite_ids")
         private val KEY_ALBUM_TAGS_PREFIX = "album_tag_"
         private val KEY_SAF_URI_PREFIX = "saf_uri_"
@@ -47,16 +46,6 @@ class UserPreferences(private val context: Context) {
     suspend fun setTutorialSeen(seen: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[KEY_SEEN_TUTORIAL] = seen
-        }
-    }
-
-    val demoModeFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[KEY_DEMO_MODE] ?: true
-    }
-
-    suspend fun setDemoMode(enabled: Boolean) {
-        context.dataStore.edit { prefs ->
-            prefs[KEY_DEMO_MODE] = enabled
         }
     }
 

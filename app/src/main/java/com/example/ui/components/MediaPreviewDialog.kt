@@ -167,8 +167,8 @@ fun MediaPreviewDialog(
                         maxLines = 1
                     )
                     Text(
-                        text = "${item.appType.displayName} • ${item.formattedSize}",
-                        color = Color.White.copy(alpha = 0.75f),
+                        text = "${item.appType.displayName} • ${item.formattedDateTime} • ${item.formattedSize}",
+                        color = Color.White.copy(alpha = 0.85f),
                         fontSize = 12.sp
                     )
                 }

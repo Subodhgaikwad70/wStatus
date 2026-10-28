@@ -279,7 +279,7 @@ fun StatusesScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (state.demoMode) "Showing interactive sample & device statuses" else "Reading ${state.selectedAppType.displayName} folder",
+                    text = "Reading ${state.selectedAppType.displayName} status folder",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f)
@@ -356,7 +356,7 @@ fun StatusesScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "1. Open ${state.selectedAppType.displayName}\n2. View your friends' statuses\n3. Come back here and tap Refresh!",
+                        text = "1. Open ${state.selectedAppType.displayName}\n2. View your friends' statuses\n3. Tap Refresh or grant WhatsApp folder access below!",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -365,13 +365,36 @@ fun StatusesScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    Button(
-                        onClick = { viewModel.setDemoMode(true) },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.testTag("load_sample_statuses_button")
-                    ) {
-                        Text("Load Sample Statuses")
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(
+                            onClick = { safFolderLauncher.launch(null) },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.testTag("empty_grant_folder_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FolderOpen,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Grant Folder")
+                        }
+
+                        Button(
+                            onClick = { viewModel.loadStatuses() },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.testTag("empty_refresh_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Refresh")
+                        }
                     }
                 }
             } else {

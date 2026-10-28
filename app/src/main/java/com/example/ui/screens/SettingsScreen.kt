@@ -206,48 +206,6 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Demo Mode / Sample Statuses Switch
-        SettingsSectionHeader(title = "Sample / Test Mode", icon = Icons.Default.Science)
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Interactive Demo Media",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        text = "Generates high-definition sample photos & video statuses for emulator & test devices",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 16.sp
-                    )
-                }
-                Switch(
-                    checked = state.demoMode,
-                    onCheckedChange = { viewModel.setDemoMode(it) },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = WhatsAppGreen
-                    ),
-                    modifier = Modifier.testTag("demo_mode_switch")
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
         // Tutorial & Guide
         SettingsSectionHeader(title = "Help & Tutorial", icon = Icons.Default.HelpOutline)
         Card(

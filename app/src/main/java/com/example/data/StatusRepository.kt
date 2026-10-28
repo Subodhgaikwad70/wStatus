@@ -20,8 +20,7 @@ class StatusRepository(private val context: Context) {
     private val TAG = "StatusRepository"
 
     suspend fun getStatuses(
-        appType: WhatsAppAppType,
-        forceDemo: Boolean = false
+        appType: WhatsAppAppType
     ): List<StatusItem> = withContext(Dispatchers.IO) {
         val results = mutableListOf<StatusItem>()
         val savedFileNames = getSavedFileNames()
@@ -78,8 +77,7 @@ class StatusRepository(private val context: Context) {
                                     appType = appType,
                                     isSaved = isSaved,
                                     isFavorite = favorites.contains(id),
-                                    albumTag = tags[id] ?: "General",
-                                    isDemo = false
+                                    albumTag = tags[id] ?: "General"
                                 )
                             )
                         }
@@ -123,29 +121,12 @@ class StatusRepository(private val context: Context) {
                                     appType = appType,
                                     isSaved = isSaved,
                                     isFavorite = favorites.contains(id),
-                                    albumTag = tags[id] ?: "General",
-                                    isDemo = false
+                                    albumTag = tags[id] ?: "General"
                                 )
                             )
                         }
                     }
                 }
-            }
-        }
-
-        // 3. Fallback to / include demo statuses if folder is empty or forceDemo is enabled
-        if (results.isEmpty() || forceDemo) {
-            val demoList = DemoMediaGenerator.generateDemoStatuses(context)
-            val filteredDemo = demoList.filter { it.appType == appType || forceDemo }
-            for (demo in filteredDemo) {
-                val isSaved = savedFileNames.contains(File(demo.filePath ?: "").name)
-                results.add(
-                    demo.copy(
-                        isSaved = isSaved,
-                        isFavorite = favorites.contains(demo.id),
-                        albumTag = tags[demo.id] ?: demo.albumTag
-                    )
-                )
             }
         }
 
@@ -175,8 +156,7 @@ class StatusRepository(private val context: Context) {
                         appType = parseAppTypeFromFileName(file.name),
                         isSaved = true,
                         isFavorite = favorites.contains(id),
-                        albumTag = tags[id] ?: "General",
-                        isDemo = false
+                        albumTag = tags[id] ?: "General"
                     )
                 )
             }
@@ -232,8 +212,7 @@ class StatusRepository(private val context: Context) {
                                 appType = parseAppTypeFromFileName(name),
                                 isSaved = true,
                                 isFavorite = favorites.contains(itemId),
-                                albumTag = tags[itemId] ?: "General",
-                                isDemo = false
+                                albumTag = tags[itemId] ?: "General"
                             )
                         )
                     }
@@ -284,8 +263,7 @@ class StatusRepository(private val context: Context) {
                                 appType = parseAppTypeFromFileName(name),
                                 isSaved = true,
                                 isFavorite = favorites.contains(itemId),
-                                albumTag = tags[itemId] ?: "General",
-                                isDemo = false
+                                albumTag = tags[itemId] ?: "General"
                             )
                         )
                     }

@@ -27,11 +27,13 @@ class ExampleRobolectricTest {
       title = "Test Video",
       mediaType = com.example.model.MediaType.VIDEO,
       sizeBytes = 2 * 1024 * 1024L,
-      dateModified = 1000L,
+      dateModified = 1698450000000L,
       appType = com.example.model.WhatsAppAppType.WHATSAPP,
       durationMs = 65000L
     )
     assertEquals("2.0 MB", item.formattedSize)
     assertEquals("01:05", item.formattedDuration)
+    org.junit.Assert.assertTrue(item.formattedDateTime.isNotEmpty())
+    org.junit.Assert.assertTrue(item.formattedTime.isNotEmpty())
   }
 }

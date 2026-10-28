@@ -42,7 +42,6 @@ data class StatusUiState(
     val isLoading: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val showTutorial: Boolean = false,
-    val demoMode: Boolean = true,
     val previewItem: StatusItem? = null,
     val isSelectionMode: Boolean = false,
     val selectedIds: Set<String> = emptySet(),
@@ -76,13 +75,6 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
 
-        viewModelScope.launch {
-            preferences.demoModeFlow.collectLatest { demo ->
-                _uiState.update { it.copy(demoMode = demo) }
-                loadStatuses()
-            }
-        }
-
         loadStatuses()
         loadSavedStatuses()
         loadStorageStats()
@@ -112,8 +104,7 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val list = repository.getStatuses(
-                    appType = _uiState.value.selectedAppType,
-                    forceDemo = _uiState.value.demoMode
+                    appType = _uiState.value.selectedAppType
                 )
                 _uiState.update { it.copy(statuses = list, isLoading = false) }
             } catch (e: Exception) {
@@ -251,12 +242,6 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             preferences.setThemeMode(mode)
-        }
-    }
-
-    fun setDemoMode(enabled: Boolean) {
-        viewModelScope.launch {
-            preferences.setDemoMode(enabled)
         }
     }
 

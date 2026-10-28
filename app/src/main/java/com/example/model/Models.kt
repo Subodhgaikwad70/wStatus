@@ -1,5 +1,9 @@
 package com.example.model
 
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 enum class MediaType {
     IMAGE,
     VIDEO
@@ -62,8 +66,7 @@ data class StatusItem(
     val isSaved: Boolean = false,
     val isFavorite: Boolean = false,
     val albumTag: String = "General",
-    val durationMs: Long = 0L,
-    val isDemo: Boolean = false
+    val durationMs: Long = 0L
 ) {
     val formattedSize: String
         get() {
@@ -83,5 +86,38 @@ data class StatusItem(
             val seconds = (durationMs / 1000) % 60
             val minutes = (durationMs / (1000 * 60)) % 60
             return String.format("%02d:%02d", minutes, seconds)
+        }
+
+    val formattedDateTime: String
+        get() {
+            if (dateModified <= 0) return "Recent"
+            val now = System.currentTimeMillis()
+            val diff = now - dateModified
+            val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+            val timeStr = timeFormat.format(Date(dateModified))
+
+            val oneDayMs = 24 * 60 * 60 * 1000L
+            return when {
+                diff in 0..oneDayMs -> "Today, $timeStr"
+                diff in oneDayMs..(2 * oneDayMs) -> "Yesterday, $timeStr"
+                else -> {
+                    val dateFormat = SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault())
+                    dateFormat.format(Date(dateModified))
+                }
+            }
+        }
+
+    val formattedDate: String
+        get() {
+            if (dateModified <= 0) return ""
+            val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+            return dateFormat.format(Date(dateModified))
+        }
+
+    val formattedTime: String
+        get() {
+            if (dateModified <= 0) return ""
+            val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+            return timeFormat.format(Date(dateModified))
         }
 }

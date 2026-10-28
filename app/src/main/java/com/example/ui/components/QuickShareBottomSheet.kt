@@ -107,7 +107,7 @@ fun QuickShareBottomSheet(
                         maxLines = 1
                     )
                     Text(
-                        text = "${item.mediaType.name} • ${item.formattedSize} • ${item.albumTag}",
+                        text = "${item.mediaType.name} • ${item.formattedDateTime} • ${item.formattedSize}",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

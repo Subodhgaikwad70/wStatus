@@ -9,6 +9,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -203,7 +204,7 @@ fun StatusCard(
                 }
             }
 
-            // Bottom bar: Size label & Quick Save button
+            // Bottom bar: Date/Time & Size labels + Action buttons
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -211,14 +212,23 @@ fun StatusCard(
                     .padding(8.dp)
                     .align(Alignment.BottomStart)
             ) {
-                Text(
-                    text = item.formattedSize,
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = item.formattedDateTime,
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1
+                    )
+                    Text(
+                        text = item.formattedSize,
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
 
-                Box(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.width(4.dp))
 
                 // One-click Share Button
                 IconButton(
