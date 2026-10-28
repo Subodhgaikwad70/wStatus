@@ -10,11 +10,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Card
@@ -63,6 +66,7 @@ fun StatusCard(
     onItemLongClick: () -> Unit,
     onSaveClick: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onShareClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -216,19 +220,37 @@ fun StatusCard(
 
                 Box(modifier = Modifier.weight(1f))
 
+                // One-click Share Button
+                IconButton(
+                    onClick = onShareClick,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                        .testTag("status_quick_share_${item.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = "One-click Share",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(6.dp))
+
                 // Saved checkmark or Download Button
                 if (item.isSaved) {
                     Surface(
                         shape = CircleShape,
                         color = StatusSavedBadge,
-                        modifier = Modifier.size(34.dp)
+                        modifier = Modifier.size(32.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = "Saved to Gallery",
                                 tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -236,7 +258,7 @@ fun StatusCard(
                     IconButton(
                         onClick = onSaveClick,
                         modifier = Modifier
-                            .size(34.dp)
+                            .size(32.dp)
                             .background(MaterialTheme.colorScheme.primary, CircleShape)
                             .testTag("status_quick_save_${item.id}")
                     ) {
@@ -244,7 +266,7 @@ fun StatusCard(
                             imageVector = Icons.Default.Download,
                             contentDescription = "Save to Gallery",
                             tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }

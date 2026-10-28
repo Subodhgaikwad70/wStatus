@@ -79,6 +79,7 @@ fun SavedVaultScreen(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
     var showStorageDialog by remember { mutableStateOf(false) }
+    var shareItem by remember { mutableStateOf<StatusItem?>(null) }
 
     // Filter by search query
     val searchFiltered = if (state.savedSearchQuery.isBlank()) {
@@ -142,6 +143,28 @@ fun SavedVaultScreen(
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+
+                if (state.savedStatuses.isNotEmpty()) {
+                    Button(
+                        onClick = { MediaManager.shareMultiple(context, state.savedStatuses) },
+                        colors = ButtonDefaults.buttonColors(containerColor = com.example.ui.theme.WhatsAppGreen),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier
+                            .height(30.dp)
+                            .testTag("vault_share_all_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = null,
+                            modifier = Modifier.size(13.dp),
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Share All", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
                 }
 
                 Button(
@@ -416,6 +439,9 @@ fun SavedVaultScreen(
                             onSaveClick = {},
                             onToggleFavorite = {
                                 viewModel.toggleFavorite(item)
+                            },
+                            onShareClick = {
+                                shareItem = item
                             }
                         )
                     }
@@ -455,6 +481,13 @@ fun SavedVaultScreen(
             stats = state.storageStats,
             onClearCache = { viewModel.clearCache() },
             onDismiss = { showStorageDialog = false }
+        )
+    }
+
+    shareItem?.let { item ->
+        com.example.ui.components.QuickShareBottomSheet(
+            item = item,
+            onDismiss = { shareItem = null }
         )
     }
 }

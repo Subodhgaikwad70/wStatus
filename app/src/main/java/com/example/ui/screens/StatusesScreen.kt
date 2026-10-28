@@ -48,6 +48,10 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,6 +79,7 @@ fun StatusesScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var shareItem by remember { mutableStateOf<StatusItem?>(null) }
 
     // SAF folder picker launcher
     val safFolderLauncher = rememberLauncherForActivityResult(
@@ -404,11 +409,21 @@ fun StatusesScreen(
                             },
                             onToggleFavorite = {
                                 viewModel.toggleFavorite(statusItem)
+                            },
+                            onShareClick = {
+                                shareItem = statusItem
                             }
                         )
                     }
                 }
             }
+        }
+
+        shareItem?.let { item ->
+            com.example.ui.components.QuickShareBottomSheet(
+                item = item,
+                onDismiss = { shareItem = null }
+            )
         }
     }
 }

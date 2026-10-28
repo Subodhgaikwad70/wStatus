@@ -106,6 +106,7 @@ fun MediaPreviewDialog(
     val context = LocalContext.current
     var showInfoSheet by remember { mutableStateOf(false) }
     var showAlbumSheet by remember { mutableStateOf(false) }
+    var showQuickShareSheet by remember { mutableStateOf(false) }
 
     BackHandler {
         onDismiss()
@@ -236,7 +237,7 @@ fun MediaPreviewDialog(
 
                         // Share button
                         FilledTonalButton(
-                            onClick = { onShare(item) },
+                            onClick = { showQuickShareSheet = true },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .weight(1f)
@@ -414,6 +415,13 @@ fun MediaPreviewDialog(
                     Spacer(modifier = Modifier.height(24.dp))
                 }
             }
+        }
+
+        if (showQuickShareSheet) {
+            QuickShareBottomSheet(
+                item = item,
+                onDismiss = { showQuickShareSheet = false }
+            )
         }
     }
 }

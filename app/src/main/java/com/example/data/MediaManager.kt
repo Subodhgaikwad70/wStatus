@@ -1,5 +1,6 @@
 package com.example.data
 
+import android.content.ActivityNotFoundException
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -16,8 +17,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.InputStream
+
+enum class SocialPlatform(
+    val title: String,
+    val packageName: String,
+    val description: String
+) {
+    WHATSAPP("WhatsApp", "com.whatsapp", "Chat or Status"),
+    WHATSAPP_BUSINESS("WA Business", "com.whatsapp.w4b", "Business Status"),
+    INSTAGRAM("Instagram", "com.instagram.android", "Stories & Feed"),
+    FACEBOOK("Facebook", "com.facebook.katana", "Feed & Stories"),
+    TELEGRAM("Telegram", "org.telegram.messenger", "Chats & Stories"),
+    ANY("All Apps", "", "System Share Sheet")
+}
 
 object MediaManager {
     private const val TAG = "MediaManager"
@@ -50,7 +63,6 @@ object MediaManager {
             val targetUri = resolver.insert(collection, contentValues)
                 ?: return@withContext Result.failure(Exception("Unable to create MediaStore entry"))
 
-            // Stream media content into the created MediaStore entry
             val inputStream: InputStream? = if (item.filePath != null && File(item.filePath).exists()) {
                 FileInputStream(File(item.filePath))
             } else {
@@ -77,7 +89,6 @@ object MediaManager {
                 resolver.update(targetUri, contentValues, null, null)
             }
 
-            // Also copy to app internal saved media directory for file manager organization
             val savedDir = File(context.getExternalFilesDir(null), "SavedStatuses").apply { mkdirs() }
             val localSavedFile = File(savedDir, fileName)
             if (item.filePath != null && File(item.filePath).exists()) {
@@ -134,11 +145,61 @@ object MediaManager {
                 type = mimeType
                 putExtra(Intent.EXTRA_STREAM, shareUri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(Intent.createChooser(shareIntent, "Share Status via"))
+            val chooser = Intent.createChooser(shareIntent, "Share Status via").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
         } catch (e: Exception) {
             Log.e(TAG, "Error sharing status", e)
             Toast.makeText(context, "Share error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun shareToSocialPlatform(context: Context, item: StatusItem, platform: SocialPlatform) {
+        val shareUri = getShareableUri(context, item) ?: run {
+            Toast.makeText(context, "Could not prepare file for sharing", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val isVideo = item.mediaType == MediaType.VIDEO
+        val mimeType = if (isVideo) "video/*" else "image/*"
+
+        if (platform == SocialPlatform.ANY) {
+            shareStatus(context, item)
+            return
+        }
+
+        try {
+            // Instagram Stories specific intent support
+            if (platform == SocialPlatform.INSTAGRAM) {
+                try {
+                    val storyIntent = Intent("com.instagram.share.ADD_TO_STORY").apply {
+                        setDataAndType(shareUri, mimeType)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(storyIntent)
+                    return
+                } catch (_: Exception) {
+                    // Fallback to standard Instagram feed/share
+                }
+            }
+
+            val directIntent = Intent(Intent.ACTION_SEND).apply {
+                type = mimeType
+                putExtra(Intent.EXTRA_STREAM, shareUri)
+                `package` = platform.packageName
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(directIntent)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(context, "${platform.title} is not installed, opening Share Chooser...", Toast.LENGTH_SHORT).show()
+            shareStatus(context, item)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sharing to ${platform.title}", e)
+            shareStatus(context, item)
         }
     }
 
@@ -160,8 +221,12 @@ object MediaManager {
                 type = "*/*"
                 putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(Intent.createChooser(shareIntent, "Share ${items.size} Statuses"))
+            val chooser = Intent.createChooser(shareIntent, "Share ${items.size} Statuses").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
         } catch (e: Exception) {
             Log.e(TAG, "Error sharing multiple statuses", e)
             Toast.makeText(context, "Share error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
@@ -169,19 +234,6 @@ object MediaManager {
     }
 
     fun repostToWhatsApp(context: Context, item: StatusItem) {
-        try {
-            val shareUri = getShareableUri(context, item) ?: return
-            val mimeType = if (item.mediaType == MediaType.VIDEO) "video/*" else "image/*"
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = mimeType
-                putExtra(Intent.EXTRA_STREAM, shareUri)
-                `package` = item.appType.packageName
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            // If target WhatsApp package is not installed, fallback to standard share chooser
-            shareStatus(context, item)
-        }
+        shareToSocialPlatform(context, item, SocialPlatform.WHATSAPP)
     }
 }
