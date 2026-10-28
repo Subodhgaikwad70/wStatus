@@ -27,10 +27,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
@@ -64,10 +68,10 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -86,6 +90,7 @@ import com.example.model.MediaType
 import com.example.model.StatusItem
 import com.example.ui.theme.WhatsAppGreen
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -94,7 +99,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediaPreviewDialog(
-    item: StatusItem,
+    items: List<StatusItem>,
+    initialIndex: Int = 0,
     onDismiss: () -> Unit,
     onSave: (StatusItem) -> Unit,
     onShare: (StatusItem) -> Unit,
@@ -103,10 +109,21 @@ fun MediaPreviewDialog(
     onSetAlbum: (StatusItem, String) -> Unit,
     availableAlbums: List<String>
 ) {
+    if (items.isEmpty()) return
+
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var showInfoSheet by remember { mutableStateOf(false) }
     var showAlbumSheet by remember { mutableStateOf(false) }
     var showQuickShareSheet by remember { mutableStateOf(false) }
+
+    val safeInitialIndex = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0))
+    val pagerState = rememberPagerState(
+        initialPage = safeInitialIndex,
+        pageCount = { items.size }
+    )
+
+    val currentItem = items.getOrNull(pagerState.currentPage) ?: items[0]
 
     BackHandler {
         onDismiss()
@@ -126,69 +143,172 @@ fun MediaPreviewDialog(
                 .background(Color.Black)
                 .testTag("media_preview_dialog")
         ) {
-            // Media Content (Image or Video)
-            if (item.mediaType == MediaType.IMAGE) {
-                ImagePreviewContent(item = item)
-            } else {
-                VideoPreviewContent(item = item)
+            // Horizontal Pager: Swiping left or right reveals the next/previous status
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag("media_preview_pager")
+            ) { page ->
+                val pageItem = items[page]
+                val isPageActive = page == pagerState.currentPage
+                if (pageItem.mediaType == MediaType.IMAGE) {
+                    ImagePreviewContent(item = pageItem)
+                } else {
+                    VideoPreviewContent(item = pageItem, isActive = isPageActive)
+                }
             }
 
-            // Top Overlay Bar
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            // Left Navigation Button
+            if (pagerState.currentPage > 0) {
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 12.dp)
+                        .size(46.dp)
+                        .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+                        .testTag("preview_prev_status_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "Previous Status",
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+
+            // Right Navigation Button
+            if (pagerState.currentPage < items.size - 1) {
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 12.dp)
+                        .size(46.dp)
+                        .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+                        .testTag("preview_next_status_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Next Status",
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+
+            // Top Overlay Bar: Story Segment Progress Dashes + Header details
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(top = 4.dp)
                     .align(Alignment.TopStart)
             ) {
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .size(42.dp)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                        .testTag("preview_back_button")
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White
-                    )
+                // WhatsApp-style status segment dashes
+                if (items.size > 1) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        for (i in items.indices) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(3.dp)
+                                    .background(
+                                        color = if (i == pagerState.currentPage) WhatsAppGreen else Color.White.copy(alpha = 0.35f),
+                                        shape = RoundedCornerShape(2.dp)
+                                    )
+                            )
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = item.title,
-                        color = Color.White,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1
-                    )
-                    Text(
-                        text = "${item.appType.displayName} • ${item.formattedDateTime} • ${item.formattedSize}",
-                        color = Color.White.copy(alpha = 0.85f),
-                        fontSize = 12.sp
-                    )
-                }
-
-                IconButton(
-                    onClick = { showInfoSheet = true },
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .size(42.dp)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                        .testTag("preview_info_button")
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "Details",
-                        tint = Color.White
-                    )
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .size(42.dp)
+                            .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                            .testTag("preview_back_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = currentItem.title,
+                                color = Color.White,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                            if (items.size > 1) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color.White.copy(alpha = 0.2f)
+                                ) {
+                                    Text(
+                                        text = "${pagerState.currentPage + 1}/${items.size}",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Text(
+                            text = "${currentItem.appType.displayName} • ${currentItem.formattedDateTime} • ${currentItem.formattedSize}",
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { showInfoSheet = true },
+                        modifier = Modifier
+                            .size(42.dp)
+                            .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                            .testTag("preview_info_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Details",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
 
-            // Bottom Action Bar
+            // Bottom Action Bar: operations on currentItem
             Surface(
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 color = Color(0xFF1E293B).copy(alpha = 0.95f),
@@ -210,9 +330,9 @@ fun MediaPreviewDialog(
                     ) {
                         // Save to Gallery button
                         Button(
-                            onClick = { onSave(item) },
+                            onClick = { onSave(currentItem) },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (item.isSaved) Color(0xFF059669) else WhatsAppGreen
+                                containerColor = if (currentItem.isSaved) Color(0xFF059669) else WhatsAppGreen
                             ),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
@@ -221,21 +341,21 @@ fun MediaPreviewDialog(
                                 .testTag("preview_save_button")
                         ) {
                             Icon(
-                                imageVector = if (item.isSaved) Icons.Default.Check else Icons.Default.Download,
+                                imageVector = if (currentItem.isSaved) Icons.Default.Check else Icons.Default.Download,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = if (item.isSaved) "Saved" else "Save to Gallery",
+                                text = if (currentItem.isSaved) "Saved" else "Save to Gallery",
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp
                             )
                         }
 
-                        // Share button
+                        // Share button (triggers QuickShareBottomSheet)
                         FilledTonalButton(
                             onClick = { showQuickShareSheet = true },
                             shape = RoundedCornerShape(12.dp),
@@ -255,7 +375,7 @@ fun MediaPreviewDialog(
 
                         // Repost to WhatsApp
                         OutlinedButton(
-                            onClick = { onRepost(item) },
+                            onClick = { onRepost(currentItem) },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .weight(1f)
@@ -286,14 +406,14 @@ fun MediaPreviewDialog(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Album: ${item.albumTag}",
+                                text = "Album: ${currentItem.albumTag}",
                                 fontSize = 12.sp
                             )
                         }
 
-                        if (item.isSaved) {
+                        if (currentItem.isSaved) {
                             IconButton(
-                                onClick = { onDelete(item) },
+                                onClick = { onDelete(currentItem) },
                                 modifier = Modifier.testTag("preview_delete_button")
                             ) {
                                 Icon(
@@ -327,15 +447,15 @@ fun MediaPreviewDialog(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    InfoRow(label = "File Name", value = item.title)
-                    InfoRow(label = "Source App", value = item.appType.displayName)
-                    InfoRow(label = "Media Type", value = item.mediaType.name)
-                    InfoRow(label = "File Size", value = item.formattedSize)
+                    InfoRow(label = "File Name", value = currentItem.title)
+                    InfoRow(label = "Source App", value = currentItem.appType.displayName)
+                    InfoRow(label = "Media Type", value = currentItem.mediaType.name)
+                    InfoRow(label = "File Size", value = currentItem.formattedSize)
                     val dateStr = SimpleDateFormat("MMM dd, yyyy • hh:mm a", Locale.getDefault())
-                        .format(Date(item.dateModified))
-                    InfoRow(label = "Last Modified", value = dateStr)
-                    InfoRow(label = "Album / Tag", value = item.albumTag)
-                    InfoRow(label = "Saved to Device", value = if (item.isSaved) "Yes (in Gallery & App Vault)" else "Not yet saved")
+                        .format(Date(currentItem.dateModified))
+                    InfoRow(label = "Date & Time", value = dateStr)
+                    InfoRow(label = "Album / Tag", value = currentItem.albumTag)
+                    InfoRow(label = "Saved to Device", value = if (currentItem.isSaved) "Yes (Gallery & App Vault)" else "Not yet saved")
 
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
@@ -377,9 +497,9 @@ fun MediaPreviewDialog(
                     nonAllAlbums.forEach { album ->
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = if (item.albumTag == album) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            color = if (currentItem.albumTag == album) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                             onClick = {
-                                onSetAlbum(item, album)
+                                onSetAlbum(currentItem, album)
                                 showAlbumSheet = false
                             },
                             modifier = Modifier
@@ -393,16 +513,16 @@ fun MediaPreviewDialog(
                                 Icon(
                                     imageVector = Icons.Default.Folder,
                                     contentDescription = null,
-                                    tint = if (item.albumTag == album) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = if (currentItem.albumTag == album) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     text = album,
-                                    fontWeight = if (item.albumTag == album) FontWeight.Bold else FontWeight.Medium,
+                                    fontWeight = if (currentItem.albumTag == album) FontWeight.Bold else FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.weight(1f))
-                                if (item.albumTag == album) {
+                                if (currentItem.albumTag == album) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = null,
@@ -417,13 +537,39 @@ fun MediaPreviewDialog(
             }
         }
 
+        // Quick Share Sheet (Direct social media platforms)
         if (showQuickShareSheet) {
             QuickShareBottomSheet(
-                item = item,
+                item = currentItem,
                 onDismiss = { showQuickShareSheet = false }
             )
         }
     }
+}
+
+// Single-item overload for backwards compatibility
+@Composable
+fun MediaPreviewDialog(
+    item: StatusItem,
+    onDismiss: () -> Unit,
+    onSave: (StatusItem) -> Unit,
+    onShare: (StatusItem) -> Unit,
+    onRepost: (StatusItem) -> Unit,
+    onDelete: (StatusItem) -> Unit,
+    onSetAlbum: (StatusItem, String) -> Unit,
+    availableAlbums: List<String>
+) {
+    MediaPreviewDialog(
+        items = listOf(item),
+        initialIndex = 0,
+        onDismiss = onDismiss,
+        onSave = onSave,
+        onShare = onShare,
+        onRepost = onRepost,
+        onDelete = onDelete,
+        onSetAlbum = onSetAlbum,
+        availableAlbums = availableAlbums
+    )
 }
 
 @Composable
@@ -503,15 +649,26 @@ private fun ImagePreviewContent(item: StatusItem) {
 }
 
 @Composable
-private fun VideoPreviewContent(item: StatusItem) {
+private fun VideoPreviewContent(item: StatusItem, isActive: Boolean = true) {
     val context = LocalContext.current
-    var isPlaying by remember { mutableStateOf(true) }
+    var isPlaying by remember { mutableStateOf(isActive) }
     var durationMs by remember { mutableIntStateOf(0) }
     var currentPosMs by remember { mutableIntStateOf(0) }
     var isMuted by remember { mutableStateOf(false) }
     var isLooping by remember { mutableStateOf(true) }
     var videoViewRef by remember { mutableStateOf<VideoView?>(null) }
     var mediaPlayerRef by remember { mutableStateOf<MediaPlayer?>(null) }
+
+    // When the user swipes away to another page, pause immediately
+    LaunchedEffect(isActive) {
+        if (!isActive) {
+            videoViewRef?.pause()
+            isPlaying = false
+        } else {
+            videoViewRef?.start()
+            isPlaying = true
+        }
+    }
 
     // Progress updater ticker
     LaunchedEffect(isPlaying, videoViewRef) {
@@ -559,8 +716,13 @@ private fun VideoPreviewContent(item: StatusItem) {
                         } else {
                             mp.setVolume(1f, 1f)
                         }
-                        start()
-                        isPlaying = true
+                        if (isActive) {
+                            start()
+                            isPlaying = true
+                        } else {
+                            pause()
+                            isPlaying = false
+                        }
                     }
 
                     setOnCompletionListener {

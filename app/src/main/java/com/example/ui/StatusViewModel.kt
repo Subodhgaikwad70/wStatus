@@ -43,6 +43,8 @@ data class StatusUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val showTutorial: Boolean = false,
     val previewItem: StatusItem? = null,
+    val previewItems: List<StatusItem> = emptyList(),
+    val previewInitialIndex: Int = 0,
     val isSelectionMode: Boolean = false,
     val selectedIds: Set<String> = emptySet(),
     val savedSearchQuery: String = "",
@@ -151,8 +153,11 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
                     val updated = state.statuses.map {
                         if (it.id == item.id) it.copy(isSaved = true) else it
                     }
+                    val updatedPreviewItems = state.previewItems.map {
+                        if (it.id == item.id) it.copy(isSaved = true) else it
+                    }
                     val updatedPreview = if (state.previewItem?.id == item.id) state.previewItem.copy(isSaved = true) else state.previewItem
-                    state.copy(statuses = updated, previewItem = updatedPreview)
+                    state.copy(statuses = updated, previewItems = updatedPreviewItems, previewItem = updatedPreview)
                 }
                 loadSavedStatuses()
                 loadStorageStats()
@@ -185,8 +190,10 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
             val deleted = repository.deleteSavedStatus(item)
             if (deleted) {
                 Toast.makeText(getApplication(), "Removed from Saved Vault", Toast.LENGTH_SHORT).show()
-                if (_uiState.value.previewItem?.id == item.id) {
-                    _uiState.update { it.copy(previewItem = null) }
+                _uiState.update { state ->
+                    val remaining = state.previewItems.filter { it.id != item.id }
+                    val nextPreview = if (state.previewItem?.id == item.id) remaining.firstOrNull() else state.previewItem
+                    state.copy(previewItems = remaining, previewItem = nextPreview)
                 }
                 loadSavedStatuses()
                 loadStorageStats()
@@ -221,8 +228,9 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
             _uiState.update { state ->
                 val updatedStatuses = state.statuses.map { if (it.id == item.id) it.copy(isFavorite = newFav) else it }
                 val updatedSaved = state.savedStatuses.map { if (it.id == item.id) it.copy(isFavorite = newFav) else it }
+                val updatedPreviewItems = state.previewItems.map { if (it.id == item.id) it.copy(isFavorite = newFav) else it }
                 val updatedPreview = if (state.previewItem?.id == item.id) state.previewItem.copy(isFavorite = newFav) else state.previewItem
-                state.copy(statuses = updatedStatuses, savedStatuses = updatedSaved, previewItem = updatedPreview)
+                state.copy(statuses = updatedStatuses, savedStatuses = updatedSaved, previewItems = updatedPreviewItems, previewItem = updatedPreview)
             }
         }
     }
@@ -232,8 +240,9 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
             preferences.setAlbumTag(item.id, tag)
             _uiState.update { state ->
                 val updatedSaved = state.savedStatuses.map { if (it.id == item.id) it.copy(albumTag = tag) else it }
+                val updatedPreviewItems = state.previewItems.map { if (it.id == item.id) it.copy(albumTag = tag) else it }
                 val updatedPreview = if (state.previewItem?.id == item.id) state.previewItem.copy(albumTag = tag) else state.previewItem
-                state.copy(savedStatuses = updatedSaved, previewItem = updatedPreview)
+                state.copy(savedStatuses = updatedSaved, previewItems = updatedPreviewItems, previewItem = updatedPreview)
             }
             Toast.makeText(getApplication(), "Moved to \"$tag\" album", Toast.LENGTH_SHORT).show()
         }
@@ -256,12 +265,26 @@ class StatusViewModel(application: Application) : AndroidViewModel(application) 
         _uiState.update { it.copy(showTutorial = true) }
     }
 
-    fun openPreview(item: StatusItem) {
-        _uiState.update { it.copy(previewItem = item) }
+    fun openPreview(item: StatusItem, allItems: List<StatusItem> = emptyList()) {
+        val list = if (allItems.isNotEmpty()) allItems else listOf(item)
+        val index = list.indexOfFirst { it.id == item.id }.coerceAtLeast(0)
+        _uiState.update {
+            it.copy(
+                previewItem = item,
+                previewItems = list,
+                previewInitialIndex = index
+            )
+        }
     }
 
     fun closePreview() {
-        _uiState.update { it.copy(previewItem = null) }
+        _uiState.update {
+            it.copy(
+                previewItem = null,
+                previewItems = emptyList(),
+                previewInitialIndex = 0
+            )
+        }
     }
 
     fun toggleSelection(id: String) {

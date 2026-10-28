@@ -140,7 +140,8 @@ class MainActivity : ComponentActivity() {
                     // Full-screen media preview modal
                     state.previewItem?.let { previewItem ->
                         MediaPreviewDialog(
-                            item = previewItem,
+                            items = state.previewItems.ifEmpty { listOf(previewItem) },
+                            initialIndex = state.previewInitialIndex,
                             onDismiss = { viewModel.closePreview() },
                             onSave = { viewModel.saveStatus(it) },
                             onShare = { MediaManager.shareStatus(context, it) },

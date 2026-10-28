@@ -430,7 +430,7 @@ fun SavedVaultScreen(
                                 if (state.isSelectionMode) {
                                     viewModel.toggleSelection(item.id)
                                 } else {
-                                    viewModel.openPreview(item)
+                                    viewModel.openPreview(item, sortedList)
                                 }
                             },
                             onItemLongClick = {

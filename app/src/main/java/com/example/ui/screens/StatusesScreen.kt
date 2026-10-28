@@ -421,7 +421,7 @@ fun StatusesScreen(
                                 if (state.isSelectionMode) {
                                     viewModel.toggleSelection(statusItem.id)
                                 } else {
-                                    viewModel.openPreview(statusItem)
+                                    viewModel.openPreview(statusItem, filteredList)
                                 }
                             },
                             onItemLongClick = {
